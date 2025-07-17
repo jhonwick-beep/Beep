@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Space Dodger 🚀☄️</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #001040, #000010);
+      font-family: monospace;
+      color: #eee;
+      user-select: none;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: linear-gradient(to bottom, #112244, #000010);
+      border: 3px solid #44aaff;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #44aaff88;
+    }
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #224488dd;
+      padding: 10px 20px;
+      border-radius: 14px;
+      font-weight: bold;
+      font-size: 24px;
+      box-shadow: 0 0 12px #4488ffaa;
+      width: 240px;
+      text-align: center;
+      letter-spacing: 1.2px;
+      user-select: none;
+    }
+    #restartBtn {
+      display: none;
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 14px 28px;
+      font-size: 24px;
+      border: none;
+      border-radius: 10px;
+      background: #4488ff;
+      color: #eee;
+      cursor: pointer;
+      box-shadow: 0 0 14px #4488ffcc;
+      user-select: none;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    #restartBtn:hover {
+      background: #66aaff;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: <span id="current">0</span></div>
+  <button id="restartBtn" onclick="window.location.reload()">🔄 Restart</button>
+  <canvas id="game" width="480" height="640"></canvas>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const currentScoreEl = document.getElementById('current');
+    const restartBtn = document.getElementById('restartBtn');
+
+    const ship = {
+      x: canvas.width / 2 - 20,
+      y: canvas.height - 50, // moved a bit higher for visibility
+      width: 40,
+      height: 40,
+      speed: 8,
+      dx: 0,
+    };
+
+    const asteroids = [];
+    let gameOver = false;
+    let score = 0;
+    let asteroidSpawnInterval;
+    let scoreInterval;
+
+    // Sounds setup (Web Audio API)
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+
+    function playSound(freq, duration = 150, type = 'square') {
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      oscillator.type = type;
+      oscillator.frequency.value = freq;
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + duration / 1000);
+    }
+
+    function playMoveSound() {
+      playSound(600, 100, 'square');
+    }
+
+    function playGameOverSound() {
+      playSound(150, 300, 'sawtooth');
+      setTimeout(() => playSound(120, 200, 'sawtooth'), 200);
+    }
+
+    // Controls
+    const keys = {
+      left: false,
+      right: false,
+    };
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        if (!keys.left) playMoveSound();
+        keys.left = true;
+      }
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        if (!keys.right) playMoveSound();
+        keys.right = true;
+      }
+      if (e.key.toLowerCase() === 'r' && gameOver) window.location.reload();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+    });
+
+    // Create asteroid at random x at top
+    function spawnAsteroid() {
+      const size = Math.random() * 30 + 20; // smaller asteroids
+      asteroids.push({
+        x: Math.random() * (canvas.width - size),
+        y: -size,
+        size,
+        speed: 3 + Math.random() * 3,
+      });
+    }
+
+    // Draw spaceship emoji 🚀 smaller with shadow and baseline set to top
+    function drawShip() {
+      ctx.font = "40px serif";
+      ctx.textBaseline = 'top'; // align text from top
+      ctx.shadowColor = '#4488ffcc';
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = '#aaddff';
+      ctx.fillText("🚀", ship.x, ship.y);
+      ctx.shadowBlur = 0;
+    }
+
+    // Draw asteroids emoji ☄️ smaller with shadow glow, baseline top
+    function drawAsteroids() {
+      ctx.font = "40px serif";
+      ctx.textBaseline = 'top';
+      for (const a of asteroids) {
+        ctx.shadowColor = '#ffaa00cc';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#ffbb44';
+        ctx.fillText("☄️", a.x, a.y);
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    // Update game objects
+    function update() {
+      if (gameOver) return;
+
+      // Move ship left/right
+      if (keys.left) {
+        ship.dx = -ship.speed;
+      } else if (keys.right) {
+        ship.dx = ship.speed;
+      } else {
+        ship.dx = 0;
+      }
+      ship.x += ship.dx;
+      if (ship.x < 0) ship.x = 0;
+      if (ship.x + ship.width > canvas.width) ship.x = canvas.width - ship.width;
+
+      // Move asteroids down
+      for (let i = asteroids.length - 1; i >= 0; i--) {
+        const a = asteroids[i];
+        a.y += a.speed;
+        // Remove off screen
+        if (a.y > canvas.height + a.size) {
+          asteroids.splice(i, 1);
+        }
+      }
+
+      // Check collisions (simple bounding box)
+      for (const a of asteroids) {
+        if (
+          ship.x < a.x + a.size &&
+          ship.x + ship.width > a.x &&
+          ship.y < a.y + a.size &&
+          ship.y + ship.height > a.y
+        ) {
+          endGame();
+          break;
+        }
+      }
+    }
+
+    // Draw everything
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawShip();
+      drawAsteroids();
+    }
+
+    // Main game loop
+    function loop() {
+      update();
+      draw();
+      if (!gameOver) requestAnimationFrame(loop);
+    }
+
+    // End the game
+    function endGame() {
+      gameOver = true;
+      clearInterval(asteroidSpawnInterval);
+      clearInterval(scoreInterval);
+
+      playGameOverSound();
+
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '48px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('💥 Game Over!', canvas.width/2, 300);
+      ctx.font = '28px monospace';
+      ctx.fillText('Press R or Click Restart', canvas.width/2, 350);
+
+      restartBtn.style.display = 'block';
+    }
+
+    // Increase score every 0.5 seconds
+    function startScore() {
+      scoreInterval = setInterval(() => {
+        if (!gameOver) {
+          score++;
+          currentScoreEl.textContent = score;
+        }
+      }, 500);
+    }
+
+    // Start spawning asteroids every 1 second
+    function startSpawning() {
+      asteroidSpawnInterval = setInterval(() => {
+        if (!gameOver) spawnAsteroid();
+      }, 1000);
+    }
+
+    // Start game
+    startSpawning();
+    startScore();
+    loop();
+  </script>
+</body>
+</html>
