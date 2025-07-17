@@ -9,6 +9,7 @@
       background: #f1f8e9;
       font-family: monospace;
       text-align: center;
+      overflow: hidden;
     }
     canvas {
       display: block;
@@ -33,7 +34,7 @@
 </head>
 <body>
   <h1>🧅 Sir Onion's Final Cheddar Rush 🧀</h1>
-  <p>WASD/Arrow Keys to move. Avoid 🥄, beat 🥗 King Salad!</p>
+  <p>WASD/Arrow Keys to move. Press <b>P</b> to pause. Avoid 🥄, beat 🥗 King Salad!</p>
   <div id="hud">Health: <span id="health">3</span> | Score: <span id="score">0</span> | Level: <span id="level">1</span></div>
   <button id="mute">🔇 Mute</button>
   <canvas id="game" width="800" height="500"></canvas>
@@ -51,6 +52,7 @@
     let level = 1;
     let muted = false;
     let bossBattle = false;
+    let paused = false;
 
     const cheeses = Array.from({ length: 3 }, () => createCheese());
 
@@ -73,7 +75,10 @@
     }
 
     const keys = {};
-    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keydown', e => {
+      keys[e.key.toLowerCase()] = true;
+      if (e.key.toLowerCase() === 'p') paused = !paused;
+    });
     window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
     muteBtn.onclick = () => {
@@ -118,6 +123,8 @@
     }
 
     function update() {
+      if (paused) return;
+
       moveHero();
       moveEnemies(spoons);
       if (bossBattle) moveEnemies([boss]);
@@ -180,6 +187,15 @@
       cheeses.forEach(c => drawEmoji(c.x, c.y, '🧀', 20));
       spoons.forEach(s => drawEmoji(s.x, s.y, '🥄', 25));
       if (bossBattle) drawEmoji(boss.x, boss.y, '🥗', 40);
+
+      if (paused) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = '40px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('⏸ PAUSED', canvas.width / 2, canvas.height / 2);
+      }
     }
 
     function gameLoop() {
@@ -192,3 +208,4 @@
   </script>
 </body>
 </html>
+
