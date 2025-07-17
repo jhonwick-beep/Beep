@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Banana Copter 🍌🚁</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #d0f4f7;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #fffbe6;
+      border: 4px solid #fbc02d;
+      border-radius: 12px;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ffffffcc;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 18px;
+      box-shadow: 0 0 5px #aaa;
+      color: #444;
+      user-select: none;
+    }
+
+    #restartBtn {
+      display: none;
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #ffca28;
+      color: #333;
+      cursor: pointer;
+      box-shadow: 0 0 10px #666;
+      user-select: none;
+    }
+
+    #restartBtn:hover {
+      background: #fbc02d;
+    }
+  </style>
+</head>
+<body>
+  <div id="score">Score: <span id="current">0</span> | 🍌 High: <span id="high">0</span></div>
+  <button id="restartBtn" onclick="window.location.reload()">🔄 Restart</button>
+  <canvas id="game" width="480" height="640"></canvas>
+
+  <script>
+    const flapSound = new Audio('https://freesound.org/data/previews/403/403008_5121236-lq.mp3');
+    const gameOverSound = new Audio('https://freesound.org/data/previews/493/493093_10295402-lq.mp3');
+
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const currentScoreEl = document.getElementById('current');
+    const highScoreEl = document.getElementById('high');
+    const restartBtn = document.getElementById('restartBtn');
+
+    let banana = { x: 80, y: 300, width: 40, height: 40, velocity: 0 };
+    let gravity = 0.4;
+    let flapPower = -7;
+    let gameOver = false;
+    let score = 0;
+    let highScore = localStorage.getItem('bananaHighScore') || 0;
+    highScoreEl.textContent = highScore;
+
+    const mangoes = [];
+
+    function flap() {
+      banana.velocity = flapPower;
+      flapSound.currentTime = 0;
+      flapSound.play();
+    }
+
+    function spawnMango() {
+      const gap = 140;
+      const topHeight = Math.random() * 300 + 50;
+      mangoes.push({
+        x: canvas.width,
+        width: 50,
+        top: topHeight,
+        bottom: topHeight + gap,
+        scored: false,
+      });
+    }
+
+    function drawBanana() {
+      ctx.font = "40px serif";
+      ctx.fillText("🍌", banana.x, banana.y + 30);
+    }
+
+    function drawMangoes() {
+      ctx.font = "42px serif";
+      for (let m of mangoes) {
+        ctx.fillText("🥭", m.x, m.top - 10);
+        ctx.fillText("🥭", m.x, m.bottom + 35);
+      }
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      banana.velocity += gravity;
+      banana.y += banana.velocity;
+
+      if (banana.y > canvas.height || banana.y < 0) return endGame();
+
+      for (let m of mangoes) {
+        m.x -= 2;
+
+        // Collision check
+        if (
+          banana.x < m.x + m.width &&
+          banana.x + banana.width > m.x &&
+          (banana.y < m.top || banana.y > m.bottom)
+        ) {
+          return endGame();
+        }
+
+        // Scoring
+        if (m.x + m.width < banana.x && !m.scored) {
+          score++;
+          currentScoreEl.textContent = score;
+          m.scored = true;
+        }
+      }
+
+      // Remove off-screen mangoes
+      if (mangoes.length && mangoes[0].x < -60) mangoes.shift();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBanana();
+      drawMangoes();
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (!gameOver) requestAnimationFrame(loop);
+    }
+
+    function endGame() {
+      if (gameOver) return;
+      gameOver = true;
+
+      gameOverSound.play();
+
+      ctx.fillStyle = '#000000cc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#fff';
+      ctx.font = '34px monospace';
+      ctx.fillText('💀 Game Over!', 120, 300);
+      ctx.font = '20px monospace';
+      ctx.fillText('Press R or Tap Restart', 135, 340);
+
+      if (score > highScore) {
+        localStorage.setItem('bananaHighScore', score);
+        highScoreEl.textContent = score;
+      }
+
+      restartBtn.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') flap();
+      if (e.key.toLowerCase() === 'r' && gameOver) window.location.reload();
+    });
+
+    // Spawn a mango every 1.6 seconds
+    setInterval(() => {
+      if (!gameOver) spawnMango();
+    }, 1600);
+
+    // Spawn initial mango so user sees obstacles right away
+    spawnMango();
+
+    loop();
+  </script>
+</body>
+</html>
