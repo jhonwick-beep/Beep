@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sir Onion's Final Cheddar Rush 🧅🧀</title>
+  <style>
+    body {
+      margin: 0;
+      background: #f1f8e9;
+      font-family: monospace;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 20px auto;
+      background: #fffde7;
+      border: 5px solid #558b2f;
+    }
+    #hud {
+      font-size: 18px;
+      color: #33691e;
+    }
+    #mute {
+      margin-top: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      background: #aed581;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧅 Sir Onion's Final Cheddar Rush 🧀</h1>
+  <p>WASD/Arrow Keys to move. Avoid 🥄, beat 🥗 King Salad!</p>
+  <div id="hud">Health: <span id="health">3</span> | Score: <span id="score">0</span> | Level: <span id="level">1</span></div>
+  <button id="mute">🔇 Mute</button>
+  <canvas id="game" width="800" height="500"></canvas>
+
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const healthDisplay = document.getElementById('health');
+    const scoreDisplay = document.getElementById('score');
+    const levelDisplay = document.getElementById('level');
+    const muteBtn = document.getElementById('mute');
+
+    let hero = { x: 100, y: 250, size: 25, speed: 3, health: 3 };
+    let score = 0;
+    let level = 1;
+    let muted = false;
+    let bossBattle = false;
+
+    const cheeses = Array.from({ length: 3 }, () => createCheese());
+
+    function createCheese() {
+      return {
+        x: Math.random() * 750 + 20,
+        y: Math.random() * 450 + 20,
+        size: 15
+      };
+    }
+
+    let spoons = createSpoons();
+    function createSpoons() {
+      return Array.from({ length: level }, () => ({
+        x: Math.random() * 700,
+        y: Math.random() * 400,
+        size: 25,
+        speed: 1.2 + level * 0.3
+      }));
+    }
+
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+    muteBtn.onclick = () => {
+      muted = !muted;
+      muteBtn.textContent = muted ? '🔊 Unmute' : '🔇 Mute';
+    };
+
+    const cheeseSound = new Audio('https://www.myinstants.com/media/sounds/cheese.mp3');
+    const hitSound = new Audio('https://www.myinstants.com/media/sounds/hurt.mp3');
+
+    function drawEmoji(x, y, emoji, size = 25) {
+      ctx.font = `${size}px serif`;
+      ctx.fillText(emoji, x - size / 2, y + size / 2.5);
+    }
+
+    function moveHero() {
+      if (keys['arrowup'] || keys['w']) hero.y -= hero.speed;
+      if (keys['arrowdown'] || keys['s']) hero.y += hero.speed;
+      if (keys['arrowleft'] || keys['a']) hero.x -= hero.speed;
+      if (keys['arrowright'] || keys['d']) hero.x += hero.speed;
+      hero.x = Math.max(0, Math.min(canvas.width - hero.size, hero.x));
+      hero.y = Math.max(0, Math.min(canvas.height - hero.size, hero.y));
+    }
+
+    function moveEnemies(arr) {
+      for (let e of arr) {
+        const dx = hero.x - e.x;
+        const dy = hero.y - e.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 1) {
+          e.x += (dx / dist) * e.speed;
+          e.y += (dy / dist) * e.speed;
+        }
+      }
+    }
+
+    function checkCollision(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < (a.size + b.size);
+    }
+
+    function update() {
+      moveHero();
+      moveEnemies(spoons);
+      if (bossBattle) moveEnemies([boss]);
+
+      cheeses.forEach((c, i) => {
+        if (checkCollision(hero, c)) {
+          score++;
+          if (!muted) cheeseSound.play();
+          cheeses[i] = createCheese();
+          scoreDisplay.textContent = score;
+          if (score % 5 === 0 && !bossBattle) nextLevel();
+        }
+      });
+
+      for (let s of spoons) {
+        if (checkCollision(hero, s)) {
+          hero.health--;
+          if (!muted) hitSound.play();
+          s.x = Math.random() * 700;
+          s.y = Math.random() * 400;
+          healthDisplay.textContent = hero.health;
+          if (hero.health <= 0) gameOver();
+        }
+      }
+
+      if (bossBattle && checkCollision(hero, boss)) {
+        hero.health--;
+        if (!muted) hitSound.play();
+        healthDisplay.textContent = hero.health;
+        if (hero.health <= 0) gameOver();
+      }
+    }
+
+    function nextLevel() {
+      level++;
+      levelDisplay.textContent = level;
+      if (level === 3) startBoss();
+      else spoons = createSpoons();
+    }
+
+    function startBoss() {
+      bossBattle = true;
+      spoons = [];
+      boss = { x: 600, y: 200, size: 40, speed: 1.8 };
+    }
+
+    function gameOver() {
+      alert('💀 Sir Onion has been diced. Game Over! Score: ' + score);
+      localStorage.setItem('sirOnionHighScore', Math.max(score, getHighScore()));
+      window.location.reload();
+    }
+
+    function getHighScore() {
+      return parseInt(localStorage.getItem('sirOnionHighScore')) || 0;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawEmoji(hero.x, hero.y, '🧅', 30);
+      cheeses.forEach(c => drawEmoji(c.x, c.y, '🧀', 20));
+      spoons.forEach(s => drawEmoji(s.x, s.y, '🥄', 25));
+      if (bossBattle) drawEmoji(boss.x, boss.y, '🥗', 40);
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
