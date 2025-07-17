@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sir Onion's Final Cheddar Rush</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(to bottom, #f0f4c3, #aed581);
+      text-align: center;
+      color: #33691e;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin-top: 50px;
+    }
+
+    p.tagline {
+      font-size: 1.2em;
+      margin-bottom: 30px;
+    }
+
+    .menu {
+      background: #ffffffaa;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 0 10px #558b2f;
+    }
+
+    button {
+      font-size: 1.2em;
+      padding: 10px 20px;
+      margin: 10px;
+      border: none;
+      background: #8bc34a;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #7cb342;
+    }
+
+    #highScore {
+      font-size: 1em;
+      margin-top: 15px;
+      color: #004d40;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧅 Sir Onion's Final Cheddar Rush 🧀</h1>
+  <p class="tagline">“Dodge the spoons. Grab the cheese. Save the kingdom... one puff at a time!”</p>
+
+  <div class="menu">
+    <button onclick="startGame()">▶️ Start Game</button>
+    <button onclick="showInstructions()">📖 How to Play</button>
+    <p id="highScore">High Score: <span id="scoreDisplay">0</span></p>
+  </div>
+
+  <script>
+    document.getElementById('scoreDisplay').textContent =
+      localStorage.getItem('sirOnionHighScore') || 0;
+
+    function startGame() {
+      window.location.href = 'game.html'; // Update this if your game file has a different name
+    }
+
+    function showInstructions() {
+      alert(\"🧅 Instructions:\\n\\n- Move with Arrow keys or WASD\\n- Collect 🧀 cheese puffs\\n- Avoid 🥄 spoons\\n- Reach Level 3 to fight the 🥗 Salad Boss!\\n- Don't die... onions cry easily.\");
+    }
+  </script>
+</body>
+</html>
