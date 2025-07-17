@@ -4,40 +4,51 @@
   <meta charset="UTF-8" />
   <title>Sir Onion's Final Cheddar Rush 🧅🧀</title>
   <style>
-    body {
+    html, body {
       margin: 0;
+      padding: 0;
+      height: 100%;
       background: #f1f8e9;
       font-family: monospace;
-      text-align: center;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
     }
     canvas {
-      display: block;
-      margin: 20px auto;
       background: #fffde7;
       border: 5px solid #558b2f;
+      flex-grow: 1;
     }
     #hud {
       font-size: 18px;
       color: #33691e;
+      margin-top: 5px;
     }
     #mute {
-      margin-top: 10px;
       font-size: 14px;
       cursor: pointer;
       background: #aed581;
       border: none;
       padding: 5px 10px;
       border-radius: 5px;
+      margin: 10px;
+    }
+    h1 {
+      margin: 10px 0 0;
+    }
+    p {
+      margin: 4px 0 10px;
     }
   </style>
 </head>
 <body>
   <h1>🧅 Sir Onion's Final Cheddar Rush 🧀</h1>
-  <p>WASD/Arrow Keys to move. Press <b>P</b> to pause. Avoid 🥄, beat 🥗 King Salad!</p>
+  <p>WASD / Arrow Keys to move. Press <b>P</b> to pause. Avoid 🥄, beat 🥗 King Salad!</p>
   <div id="hud">Health: <span id="health">3</span> | Score: <span id="score">0</span> | Level: <span id="level">1</span></div>
   <button id="mute">🔇 Mute</button>
-  <canvas id="game" width="800" height="500"></canvas>
+  <canvas id="game" width="960" height="540"></canvas>
 
   <script>
     const canvas = document.getElementById('game');
@@ -52,14 +63,14 @@
     let level = 1;
     let muted = false;
     let bossBattle = false;
-    let paused = false;
+    let paused = true;
 
     const cheeses = Array.from({ length: 3 }, () => createCheese());
 
     function createCheese() {
       return {
-        x: Math.random() * 750 + 20,
-        y: Math.random() * 450 + 20,
+        x: Math.random() * (canvas.width - 40) + 20,
+        y: Math.random() * (canvas.height - 40) + 20,
         size: 15
       };
     }
@@ -67,8 +78,8 @@
     let spoons = createSpoons();
     function createSpoons() {
       return Array.from({ length: level }, () => ({
-        x: Math.random() * 700,
-        y: Math.random() * 400,
+        x: Math.random() * (canvas.width - 60),
+        y: Math.random() * (canvas.height - 60),
         size: 25,
         speed: 1.2 + level * 0.3
       }));
@@ -143,8 +154,8 @@
         if (checkCollision(hero, s)) {
           hero.health--;
           if (!muted) hitSound.play();
-          s.x = Math.random() * 700;
-          s.y = Math.random() * 400;
+          s.x = Math.random() * (canvas.width - 60);
+          s.y = Math.random() * (canvas.height - 60);
           healthDisplay.textContent = hero.health;
           if (hero.health <= 0) gameOver();
         }
@@ -194,7 +205,7 @@
         ctx.fillStyle = '#fff';
         ctx.font = '40px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('⏸ PAUSED', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('⏸ PAUSED - Press P to Resume', canvas.width / 2, canvas.height / 2);
       }
     }
 
@@ -208,4 +219,3 @@
   </script>
 </body>
 </html>
-
