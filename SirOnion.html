@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Sir Onion's Final Cheddar Rush 🧅🧀</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     html, body {
       margin: 0;
@@ -19,36 +20,80 @@
     canvas {
       background: #fffde7;
       border: 5px solid #558b2f;
-      flex-grow: 1;
+      max-width: 100vw;
+      height: auto;
     }
     #hud {
-      font-size: 18px;
+      font-size: 1rem;
       color: #33691e;
       margin-top: 5px;
+      text-align: center;
     }
     #mute {
-      font-size: 14px;
+      font-size: 0.9rem;
       cursor: pointer;
       background: #aed581;
       border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      margin: 10px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      margin: 10px auto;
     }
     h1 {
-      margin: 10px 0 0;
+      margin: 8px 0 0;
+      font-size: 1.5rem;
+      text-align: center;
     }
     p {
       margin: 4px 0 10px;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 0 10px;
+    }
+
+    /* Mobile touch controls */
+    #controls {
+      display: none;
+      margin-top: 10px;
+    }
+    .btn {
+      background: #c5e1a5;
+      border: 2px solid #558b2f;
+      font-size: 1.5rem;
+      padding: 10px 20px;
+      margin: 3px;
+      border-radius: 10px;
+      width: 60px;
+      height: 60px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      #controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body>
   <h1>🧅 Sir Onion's Final Cheddar Rush 🧀</h1>
-  <p>WASD / Arrow Keys to move. Press <b>P</b> to pause. Avoid 🥄, beat 🥗 King Salad!</p>
+  <p>Use WASD / Arrows or Touch. <b>P</b> or tap to pause. Avoid 🥄, beat 🥗 King Salad!</p>
   <div id="hud">Health: <span id="health">3</span> | Score: <span id="score">0</span> | Level: <span id="level">1</span></div>
   <button id="mute">🔇 Mute</button>
-  <canvas id="game" width="960" height="540"></canvas>
+  <canvas id="game"></canvas>
+
+  <!-- Mobile Controls -->
+  <div id="controls">
+    <div>
+      <button class="btn" data-dir="up">⬆️</button>
+    </div>
+    <div>
+      <button class="btn" data-dir="left">⬅️</button>
+      <button class="btn" data-dir="down">⬇️</button>
+      <button class="btn" data-dir="right">➡️</button>
+    </div>
+  </div>
 
   <script>
     const canvas = document.getElementById('game');
@@ -57,6 +102,11 @@
     const scoreDisplay = document.getElementById('score');
     const levelDisplay = document.getElementById('level');
     const muteBtn = document.getElementById('mute');
+
+    let cw = Math.min(window.innerWidth * 0.95, 960);
+    let ch = cw * 9 / 16;
+    canvas.width = cw;
+    canvas.height = ch;
 
     let hero = { x: 100, y: 250, size: 25, speed: 3, health: 3 };
     let score = 0;
@@ -106,10 +156,10 @@
     }
 
     function moveHero() {
-      if (keys['arrowup'] || keys['w']) hero.y -= hero.speed;
-      if (keys['arrowdown'] || keys['s']) hero.y += hero.speed;
-      if (keys['arrowleft'] || keys['a']) hero.x -= hero.speed;
-      if (keys['arrowright'] || keys['d']) hero.x += hero.speed;
+      if (keys['arrowup'] || keys['w'] || keys['up']) hero.y -= hero.speed;
+      if (keys['arrowdown'] || keys['s'] || keys['down']) hero.y += hero.speed;
+      if (keys['arrowleft'] || keys['a'] || keys['left']) hero.x -= hero.speed;
+      if (keys['arrowright'] || keys['d'] || keys['right']) hero.x += hero.speed;
       hero.x = Math.max(0, Math.min(canvas.width - hero.size, hero.x));
       hero.y = Math.max(0, Math.min(canvas.height - hero.size, hero.y));
     }
@@ -203,9 +253,9 @@
         ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#fff';
-        ctx.font = '40px monospace';
+        ctx.font = '30px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('⏸ PAUSED - Press P to Resume', canvas.width / 2, canvas.height / 2);
+        ctx.fillText('⏸ TAP or P to Resume', canvas.width / 2, canvas.height / 2);
       }
     }
 
@@ -216,6 +266,20 @@
     }
 
     gameLoop();
+
+    // Mobile touch support
+    document.querySelectorAll('.btn').forEach(btn => {
+      btn.addEventListener('touchstart', () => {
+        keys[btn.dataset.dir] = true;
+      });
+      btn.addEventListener('touchend', () => {
+        keys[btn.dataset.dir] = false;
+      });
+    });
+
+    canvas.addEventListener('touchstart', () => {
+      paused = !paused;
+    });
   </script>
 </body>
 </html>
